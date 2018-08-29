@@ -2,5 +2,14 @@
   "name": "xmlToCsvMapper",
   "version": "1.0.0",
   "main": "app.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "array-to-csv": "^1.0.1",
+    "lodash": "^4.17.10",
+    "nodemon": "^1.18.4",
+    "xml-js": "^1.6.7"
+  },
+  "scripts": {
+    "process": "nodemon ./app.js"
+  }
 }
