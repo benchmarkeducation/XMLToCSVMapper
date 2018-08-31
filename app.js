@@ -2,10 +2,8 @@ const fs = require('fs');
 const xmlToJs = require('xml-js');
 const toCSV = require('array-to-csv');
 const { get } = require('lodash');
-const {
-  fieldsToGrab,
-  objectPathToProcessingLevel,
-} =  require('./configs/config');
+const ObjectParser = require('./src/parser');
+const configs =  require('./configs/config');
 const processingDir = './data';
 const filesToBeProcessed = fs.readdirSync(processingDir);
 
@@ -14,25 +12,18 @@ if (filesToBeProcessed.length  === 0) {
   process.exit();
 }
 
+const parser = new ObjectParser(configs);
+
 const fileContent = fs.readFileSync(`${processingDir}/${filesToBeProcessed[1]}`);
-const header = fieldsToGrab.map(({ mapFieldTo }) => mapFieldTo);
+
+const header = configs.fieldsToGrab.map(({ mapFieldTo }) => mapFieldTo);
 
 if (fileContent) {
   const js  = xmlToJs.xml2js(fileContent, {
     compact: true,
   });
 
-  const levelToLoopStartLoopAt = get(js, objectPathToProcessingLevel);
-
-  const newArray = levelToLoopStartLoopAt.map(level => {
-    const grabbedData = [];
-
-    fieldsToGrab.forEach(({fieldInXML}) => {
-      grabbedData.push(get(level, fieldInXML));
-    });
-
-    return grabbedData;
-  });
+  const newArray = parser.parse(js);
 
   const list = [
     header,

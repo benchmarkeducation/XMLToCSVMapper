@@ -11,9 +11,10 @@ module.exports = {
     {
       fieldInXML: 'Attachments._itemRefArray.Attachment',
       mapFieldTo: 'Attachment',
-      isArray: true,
-      addsColumnForEach: true,
-      arrayItemFieldWithData: '_attributes.ref',
+      isArray: {
+        fieldInXML: '_attributes.ref',
+        addColumnForEach: true,
+      }
     }
   ],
   objectPathToProcessingLevel: 'Objects.HierarchicalRequirement',
