@@ -13,7 +13,7 @@ module.exports = {
       mapFieldTo: 'Attachment',
       isArray: {
         fieldInXML: '_attributes.ref',
-        addColumnForEach: true,
+        addColumn: true,
       }
     }
   ],

@@ -21,15 +21,19 @@ const header = configs.fieldsToGrab.map(({ mapFieldTo }) => mapFieldTo);
 if (fileContent) {
   const js  = xmlToJs.xml2js(fileContent, {
     compact: true,
+    textFn(text) {
+      return text.replace(/"/g, '\'');
+    }
   });
 
-  const newArray = parser.parse(js);
+  const list = parser.parse(js);
+  // const addedColumns = parser.columnsToAdd;
 
-  const list = [
-    header,
-    ...newArray
-  ];
-
+  // const list = [
+  //   header,
+  //   ...newArray
+  // ];
+  debugger;
   const csvData = toCSV(list);
 
   if (csvData) {
