@@ -90,32 +90,42 @@ class ObjectParser {
         const data = [];
         return this.fieldsToGrab.map(field => {
             this.currentField = field;
-            return this.processField(field.fieldInXML, item, field.isArray);
+            return this.processField(field, item);
         }).filter(value => value !== undefined);
     }
 
-    processField(fieldInXML, item, isArray) {
-        const data = get(item, fieldInXML, '');
+    processField(field, item) {
+        const data = get(item, field.fieldInXML, '');
 
-        if (isArray) {
-            this.processArray(isArray, data);
+        if (field.isArray) {
+            this.processArray(field.isArray, data);
             return;
+        }
+
+        if (field.addColumn) {
+          const valueForNewColumn = field.staticValue || data;
+          this.addExtraColumn([valueForNewColumn]);
+          return;
         }
 
         return data;
     }
 
-    processArray({fieldInXML, addColumn, isArray}, list) {
+    processArray(isArrayField, list) {
       const listData = (Array.isArray(list))
-          ? list.map(listItem => this.processField(fieldInXML, listItem, isArray))
+          ? list.map(listItem => this.processField(isArrayField, listItem))
           : [];
 
-      if (addColumn) {
-          this.columnsToAdd = listData;
-          return
+      if (isArrayField.addColumn) {
+        this.addExtraColumn(listData);
+        return
       }
 
       return listData;
+    }
+
+    addExtraColumn(listData = []) {
+        this.columnsToAdd = listData;
     }
 
     updateWithExtraColumns(listOfDataArrays) {
@@ -161,12 +171,15 @@ class ObjectParser {
     }
 
     isADynamicHeaderConfiguration(field) {
+      let fieldToCheck = field;
       let value = false;
 
-      if(field.isArray) {
-        if(field.isArray.addColumn) {
-          value = true;
-        }
+      if(fieldToCheck.isArray) {
+        fieldToCheck = fieldToCheck.isArray;
+      }
+
+      if(fieldToCheck.addColumn) {
+        value = true;
       }
 
       return value;

@@ -1,8 +1,8 @@
 module.exports = {
   fieldsToGrab: [
     {
-      fieldInXML: 'Description._text',
-      mapFieldTo: 'Description',
+      fieldInXML: 'Name._text',
+      mapFieldTo: 'Summary',
     },
     {
       fieldInXML: 'Description._text',
@@ -23,20 +23,20 @@ module.exports = {
     },
     {
       fieldInXML: 'Tasks._itemRefArray.Task',
-      isArray{
+      isArray: {
         addRow: true,
         fieldsToGrab: [
           {
-            fieldInXML: '_attributes.refObjectName'
-            mapFieldTo: 'Summary'
+            fieldInXML: '_attributes.refObjectName',
+            mapFieldTo: 'Summary',
           },
           {
             mapFieldTo: 'IssueType',
             staticValue: 'SubTask',
           }
         ],
-      }
-    }
+      },
+    },
   ],
   objectPathToProcessingLevel: 'Objects.HierarchicalRequirement',
 };
