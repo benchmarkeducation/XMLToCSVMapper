@@ -40,4 +40,3 @@ if (fileContent) {
     fs.writeFileSync(`${processingDir}/processed_${filesToBeProcessed[1].split('.')[0]}.csv`, csvData);
   }
 }
-

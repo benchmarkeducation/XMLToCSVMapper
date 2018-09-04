@@ -1,11 +1,6 @@
 const { get, map } = require('lodash');
 
 class ObjectParser {
-    // _configurations = {};
-    // _parsedData = [];
-    // fieldsToGrab = {}
-    // proccessingLevel = null;
-
     constructor(configurations = {}) {
         this.configurations = configurations;
         this.fieldsToGrab = configurations.fieldsToGrab;
@@ -65,14 +60,14 @@ class ObjectParser {
       return this._headers;
     }
 
-
-
     parse(objectToBeParsed = []) {
         this.parsedData = [];
 
         const root = (this.proccessingLevel)
             ? get(objectToBeParsed, this.proccessingLevel)
             : objectToBeParsed;
+
+            console.log(JSON.stringify(root, null, 2));
 
         if (Array.isArray(root)) {
           this.proceesHeaders();
@@ -86,7 +81,7 @@ class ObjectParser {
         } else {
             throw Error('Parsing Error: Location trying to parse is not an array.');
         }
-        
+
     }
 
     startProccessing(root = []) {
