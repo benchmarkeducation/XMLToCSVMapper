@@ -67,8 +67,6 @@ class ObjectParser {
             ? get(objectToBeParsed, this.proccessingLevel)
             : objectToBeParsed;
 
-            console.log(JSON.stringify(root, null, 2));
-
         if (Array.isArray(root)) {
           this.proceesHeaders();
           const simpleProcessedData = this.startProccessing(root);
