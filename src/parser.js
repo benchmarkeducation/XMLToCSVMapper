@@ -1,4 +1,4 @@
-const { get, map } = require('lodash');
+const { get, map, without } = require('lodash');
 
 class ObjectParser {
     constructor(configurations = {}) {
@@ -7,6 +7,7 @@ class ObjectParser {
         this.proccessingLevel = configurations.objectPathToProcessingLevel;
         this._columnsToAdd = {};
         this._headers = [];
+        this._rowsToAdd = [];
     }
 
     get configurations() {
@@ -60,6 +61,14 @@ class ObjectParser {
       return this._headers;
     }
 
+    get rowsToBeAdded() {
+      return this._rowsToAdd;
+    }
+
+    set rowsToBeAdded(rowConfig = {}) {
+      this._rowsToAdd.push(rowConfig);
+    }
+
     parse(objectToBeParsed = []) {
         this.parsedData = [];
 
@@ -68,13 +77,13 @@ class ObjectParser {
             : objectToBeParsed;
 
         if (Array.isArray(root)) {
-          this.proceesHeaders();
-          const simpleProcessedData = this.startProccessing(root);
-          const processedData = this.updateWithExtraColumns(simpleProcessedData);
+
+
+          return this.startProccessing(root);
 
           return [
             this.headers,
-            ...processedData,
+            ...this.startProccessing(root),
           ];
         } else {
             throw Error('Parsing Error: Location trying to parse is not an array.');
@@ -83,12 +92,19 @@ class ObjectParser {
     }
 
     startProccessing(root = []) {
-        return root.map((item) => this.processItem(item));
+      this.proceesHeaders();
+      root.forEach((item) => this.processItem(item));
+      this.addExtraRows();
+      const processedData = this.updateWithExtraColumns();
+      return [
+        this.headers,
+        ...processedData,
+      ];
     }
 
-    processItem(item) {
+    processItem(item, fieldsToMap = this.fieldsToGrab) {
         const data = [];
-        return this.fieldsToGrab.map(field => {
+        return fieldsToMap.map(field => {
             this.currentField = field;
             return this.processField(field, item);
         }).filter(value => value !== undefined);
@@ -96,30 +112,27 @@ class ObjectParser {
 
     processField(field, item) {
         const data = get(item, field.fieldInXML, '');
+        const valueForNewColumn = field.staticValue || data;
 
         if (field.isArray) {
             this.processArray(field.isArray, data);
             return;
         }
 
-        if (field.addColumn) {
-          const valueForNewColumn = field.staticValue || data;
-          this.addExtraColumn([valueForNewColumn]);
-          return;
-        }
-
-        return data;
+        this.addExtraColumn([valueForNewColumn]);
     }
 
     processArray(isArrayField, list) {
+
+      if (isArrayField.addRow) {
+        this.rowsToBeAdded = { fields: isArrayField, data: list };
+        return;
+      }
+
+
       const listData = (Array.isArray(list))
           ? list.map(listItem => this.processField(isArrayField, listItem))
           : [];
-
-      if (isArrayField.addColumn) {
-        this.addExtraColumn(listData);
-        return
-      }
 
       return listData;
     }
@@ -145,15 +158,18 @@ class ObjectParser {
 
       this.addHeaders(headerColumns);
 
-      return listOfDataArrays.map((dataRow, index) => {
-        const updatedDataRow = [...dataRow];
 
-        filledExtraColumns.forEach(col => {
-          updatedDataRow.push(...col[index]);
-        });
+      return filledExtraColumns;
 
-        return updatedDataRow;
-      });
+      // return listOfDataArrays.map((dataRow, index) => {
+      //   const updatedDataRow = [...dataRow];
+      //
+      //   filledExtraColumns.forEach(col => {
+      //     updatedDataRow.push(...col[index]);
+      //   });
+      //
+      //   return updatedDataRow;
+      // });
     }
 
     addHeaders(fieldList = []) {
@@ -183,6 +199,25 @@ class ObjectParser {
       }
 
       return value;
+    }
+
+    addExtraRows() {
+      this.rowsToBeAdded.forEach(({data, field}) => {
+        this.processItem(data, field);
+        this.defaultMissingColumns(field);
+      });
+    }
+
+    defaultMissingColumns(fields = [], defaultValue = '') {
+      const keysFilledAlready = Object.keys(fields);
+      const allFields = Object.keys(this.columnsToAdd);
+
+      const fieldsToBePadded = without(allFields, ...keysFilledAlready);
+
+      fieldsToBePadded.forEach(mapFieldTo => {
+        this.currentField = { mapFieldTo };
+        this.columnsToAdd = defaultValue;
+      });
     }
 }
 

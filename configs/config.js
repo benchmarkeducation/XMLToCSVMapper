@@ -9,7 +9,7 @@ module.exports = {
       mapFieldTo: 'Description',
     },
     {
-      staticValue: 'Story',
+      staticValue: 'Task',
       mapFieldTo: 'IssueType',
       addColumn: true,
     },
@@ -32,7 +32,7 @@ module.exports = {
           },
           {
             mapFieldTo: 'IssueType',
-            staticValue: 'SubTask',
+            staticValue: 'Sub-task',
           }
         ],
       },
