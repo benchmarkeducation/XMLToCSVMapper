@@ -1,15 +1,16 @@
 const fsPromises = require('fs').promises;
 const util = require('util');
 const rally = require('rally');
-const rallyConfig = require('./configs/rally-config.js');
 const { get } = require('lodash');
+const rallyConfig = require('./configs/rally-config.js');
+const HtmlConverter = require('./src/htmlConverter.js');
 
 const queryUtil = rally.util.query;
-const processingDir = './data/images';
+const processingDir = './data/media';
 
 const rallyApi = rally({
-  user: "kvalentine@benchmarkeducation.com",
-  pass: "Str1cklydop3",
+  user: "",
+  pass: "",
 });
 
 let configsToProcess;
@@ -24,7 +25,7 @@ rallyConfig.types.forEach((type) => {
       globalResolve = resolve;
       return processDataWithConfigs(success.Results, configsToProcess);
     }))
-    .then(value => console.log(JSON.stringify(value, null, 2)))
+    .then(value => fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2)))
     .then(fetchAttachments)
     .catch(error => console.log(error));
 });
@@ -77,13 +78,42 @@ function configProcessor (config, data) {
   return value;
 }
 
+
+// Config Proceessing
+
+function configProcessor (config, data) {
+  let value = `Type was not supplied for confg: ${config.rallyApiField}.`;
+
+  if (config.type) {
+    switch (config.type.toLowerCase()) {
+      case 'string':
+        return processStringType(data, config);
+        break;
+      case 'collection':
+        return processCollectionType(data, config);
+      case 'mediacollection':
+        return processMediaCollectionType(data, config);
+        return
+      default:
+        value = `Unknown Type of ${config.type} supplied`;
+    };
+  }
+
+  return value;
+}
+
 function processStringType(data, config) {
   const locationInData = config.locationInData || config.rallyApiField;
   const prefix = config.prefix || '';
   const postfix = config.postfix || '';
+  let value =  config.staticValue || get(data, locationInData);
+
+  value = (config.convert)
+    ? new HtmlConverter(value)[config.convert]
+    : value;
+
   return {
     key: config.rallyApiField,
-    value: `${prefix}${get(data, locationInData)}${postfix}`
     value: `${prefix}${value}${postfix}`
   };
 }
@@ -144,6 +174,9 @@ function storeMediaObjForFetchingLater(data, config) {
   });
 }
 
+
+// Media Processing
+
 function fetchAttachments() {
   return new Promise((resolve) => {
     attachmentsFetched = resolve;
@@ -164,6 +197,9 @@ function fetchAttachments() {
       });
   });
 }
+
+
+// Rally Api Configs
 
 function getConfigsToProcess(type, configs) {
   let fields = [
