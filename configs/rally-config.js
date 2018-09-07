@@ -8,6 +8,11 @@ module.exports = {
   ],
   globalConfigs: [
     { rallyApiField: "Name", type:"String" },
+    {
+      rallyApiField: "IssueType",
+      staticValue: "Task",
+      type: "String"
+    },
     //{ rallyApiField: "Description"},
     {
       rallyApiField: "Attachments",

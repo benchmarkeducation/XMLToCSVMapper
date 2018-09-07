@@ -8,8 +8,8 @@ const queryUtil = rally.util.query;
 const processingDir = './data/images';
 
 const rallyApi = rally({
-  user: "",
-  pass: ""
+  user: "kvalentine@benchmarkeducation.com",
+  pass: "Str1cklydop3",
 });
 
 let configsToProcess;
@@ -84,6 +84,7 @@ function processStringType(data, config) {
   return {
     key: config.rallyApiField,
     value: `${prefix}${get(data, locationInData)}${postfix}`
+    value: `${prefix}${value}${postfix}`
   };
 }
 
