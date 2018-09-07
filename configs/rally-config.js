@@ -11,17 +11,16 @@ module.exports = {
     //{ rallyApiField: "Description"},
     {
       rallyApiField: "Attachments",
-      type: 'Collection',
+      type: 'MediaCollection',
       needsFetching: true,
-      collectionFieldConfigs: [
-        {
-          rallyApiField: "Name",
-          type:"String",
-          prefix: "https://lms2-kvalentine.benchmarkuniverse.com/rallyImages/",
-        },
-      ]
+      mediaRefObjectLocation: 'Content',
+      mediaUrlConfig: {
+        rallyApiField: "Name",
+        type:"String",
+        prefix: "https://lms2-kvalentine.benchmarkuniverse.com/rallyImages/",
+      }
     },
-    //{ rallyApiField: "Tasks" },
+    //{ rallyApiField: "Tasks", type: 'Collection', collectionFieldConfigs: [] },
     //{ rallyApiField: "Notes" },
     { rallyApiField: "PlanEstimate", type: "String" },
     { rallyApiField: "Project", type: "String", locationInData: "Project.Name"},

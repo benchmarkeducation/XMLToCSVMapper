@@ -13,5 +13,8 @@
   "scripts": {
     "process": "nodemon ./app.js",
     "rally-fetch": "nodemon ./rally.js"
+  },
+  "nodemonConfig": {
+    "ignore": ["data/*"]
   }
 }
