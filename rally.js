@@ -1,9 +1,10 @@
 const fsPromises = require('fs').promises;
 const util = require('util');
 const rally = require('rally');
-const { get } = require('lodash');
+const { get, map } = require('lodash');
 const rallyConfig = require('./configs/rally-config.js');
 const HtmlConverter = require('./src/htmlConverter.js');
+const CSVCreator = require('./src/parser.js');
 
 const queryUtil = rally.util.query;
 const processingDir = './data/media';
@@ -20,11 +21,10 @@ const attachmentsToFetch = [];
 let fetchedData = [];
 
 const typePromises = rallyConfig.types.map((type) => {
-  const configsToProcess = getConfigsToProcess(type, rallyConfig);
+  configsToProcess = getConfigsToProcess(type, rallyConfig);
   const requestOptions = createTypeRequestOptions(type, configsToProcess, rallyConfig.filter);
   return fetch(requestOptions)
     .then((success) => new Promise(resolve => {
-      console.log(success.Results[0].SubmittedBy);
       globalResolve = resolve;
       return processDataWithConfigs(success.Results, configsToProcess);
     }))
@@ -38,7 +38,13 @@ const typePromises = rallyConfig.types.map((type) => {
 
 Promise.all(typePromises)
   .then((success) => {
-    const value = success.reduce((init, current) => [...init[0], current] , []);
+    const value = success.reduce((init, current) => [...init, ...current] , []);
+
+    const fieldsThatAddANewRow = map(configsToProcess.filter(({type}) => type === "Collection"), 'rallyApiField');
+
+    const csvCreator = new CSVCreator({fieldsThatAddANewRow});
+
+    csvCreator.createCSV(value);
     fsPromises.writeFile(`./data/combined.json`,JSON.stringify(value, null, 2))
   })
   .then(fetchAttachments)
@@ -129,7 +135,7 @@ function processStringType(data, config) {
     : value;
 
   return {
-    key: config.rallyApiField,
+    key: config.keyToDisplayAs || config.rallyApiField,
     value: `${prefix}${value}${postfix}`
   };
 }
@@ -142,9 +148,9 @@ function processCollectionType(data, config) {
     .then((success) => {
 
       const formattedData = {
-        key: config.rallyApiField,
+        key: config.keyToDisplayAs || config.rallyApiField,
         value: [],
-      }
+      };
 
       if(success.Results.length > 0) {
         formattedData.value = success.Results.map(item => {

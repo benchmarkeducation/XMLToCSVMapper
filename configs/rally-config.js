@@ -1,7 +1,6 @@
 module.exports = {
   types: [
     "hierarchicalrequirement",
-    "defect",
   ],
   filter: [
     {
@@ -45,7 +44,7 @@ module.exports = {
       type: 'Collection',
       collectionFieldConfigs: [
         { rallyApiField: "Name", type:"String" },
-        { rallyApiField: "State", type:"String" },
+        { rallyApiField: "State", type:"String", keyToDisplayAs: "ScheduleState" },
         {
           rallyApiField: "IssueType",
           staticValue: "Sub-task",
