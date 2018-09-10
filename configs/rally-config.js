@@ -1,6 +1,7 @@
 module.exports = {
   types: [
-    "hierarchicalrequirement",
+    //"hierarchicalrequirement",
+    "defect"
   ],
   filter: [
     {
@@ -36,7 +37,7 @@ module.exports = {
       mediaUrlConfig: {
         rallyApiField: "Name",
         type:"String",
-        prefix: "https://lms2-kvalentine.benchmarkuniverse.com/rallyImages/",
+        prefix: "https://lms2-kvalentine.benchmarkuniverse.com/media/",
       }
     },
     {

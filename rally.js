@@ -10,8 +10,8 @@ const queryUtil = rally.util.query;
 const processingDir = './data/media';
 
 const rallyApi = rally({
-  user: "kvalentine@benchmarkeducation.com",
-  pass: "Str1cklydop3",
+  user: "",
+  pass: "",
 });
 
 let configsToProcess;
