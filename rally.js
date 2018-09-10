@@ -17,18 +17,34 @@ let configsToProcess;
 let globalResolve;
 const attachmentsToFetch = [];
 
-rallyConfig.types.forEach((type) => {
+let fetchedData = [];
+
+const typePromises = rallyConfig.types.map((type) => {
   const configsToProcess = getConfigsToProcess(type, rallyConfig);
   const requestOptions = createTypeRequestOptions(type, configsToProcess, rallyConfig.filter);
   return fetch(requestOptions)
     .then((success) => new Promise(resolve => {
+      console.log(success.Results[0].SubmittedBy);
       globalResolve = resolve;
       return processDataWithConfigs(success.Results, configsToProcess);
     }))
-    .then(value => fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2)))
-    .then(fetchAttachments)
+    .then(value => {
+      fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2))
+      return value;
+    })
     .catch(error => console.log(error));
 });
+
+
+Promise.all(typePromises)
+  .then((success) => {
+    const value = success.reduce((init, current) => [...init[0], current] , []);
+    fsPromises.writeFile(`./data/combined.json`,JSON.stringify(value, null, 2))
+  })
+  .then(fetchAttachments)
+  .catch(error => console.log(error));
+
+
 
 function processDataWithConfigs(dataArray, configs) {
   const promiseMap = dataArray.map(data => Promise.resolve(data));
@@ -243,17 +259,15 @@ function generateFetchData(config) {
 }
 
 function generateQuery(filters) {
-  let query;
+  let query = queryUtil;
 
-  filters.forEach((filter, index) => {
-    query = (index === 0)
-      ? queryUtil.where(...filter)
-      : query.and(...filter)
+  filters.forEach((filter) => {
+    query = query[filter.operator](...filter.query);
   });
 
   return query;
 }
 
-function fetch(options, cb) {
+function fetch(options) {
   return rallyApi.query(options);
 }

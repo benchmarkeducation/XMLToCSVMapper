@@ -18,29 +18,6 @@ turndownService.addRule('list', {
   }
 });
 
-// turndownService.addRule('listItem', {
-//   filter: 'li',
-//
-//   replacement: function (content, node, options) {
-//     content = content
-//       .replace(/^\n+/, '') // remove leading newlines
-//       .replace(/\n+$/, '/\n') // replace trailing newlines with just a single one
-//       .replace(/\n/gm, '/\n    ') // indent
-//       .split('nbsp;').join('');
-//
-//     var prefix = options.bulletListMarker + '   '
-//     var parent = node.parentNode
-//     if (parent.nodeName === 'OL') {
-//       var start = parent.getAttribute('start')
-//       var index = Array.prototype.indexOf.call(parent.children, node)
-//       prefix = (start ? Number(start) + index : index + 1) + '.  '
-//     }
-//     return (
-//       prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '')
-//     )
-//   }
-// });
-
 class HtmlConverter{
   constructor(html) {
     this._html = html;
@@ -62,8 +39,6 @@ class HtmlConverter{
   get jiraWiki() {
     if (!this._jiraWiki) {
       this._jiraWiki = markdown2confluence(this.markdown).replace(/\n/g, " \\");
-
-      console.log(this._jiraWiki);
     }
     return this._jiraWiki;
   }

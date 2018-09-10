@@ -1,11 +1,21 @@
 module.exports = {
   types: [
-    "hierarchicalrequirement"
+    "hierarchicalrequirement",
+    "defect",
   ],
   filter: [
-    ["Iteration", "=", null],
-    //["Project.Name", "=", "Core Team"],
-    ["Project.Name", "=", "Digital Instruction Software Team"],
+    {
+      operator: 'where',
+      query: ["Project.Name", "=", "Core Team"]
+    },
+    {
+      operator: 'or',
+      query: ["Project.Name", "=", "Digital Instruction Software Team"],
+    },
+    {
+      operator: 'and',
+      query: ["Iteration", "=", null]
+    },
   ],
   globalConfigs: [
     { rallyApiField: "Name", type:"String" },
@@ -49,12 +59,17 @@ module.exports = {
     { rallyApiField: "c_POStatus", type: "String"},
     { rallyApiField: "ScheduleState", type: "String"},
   ],
-  // defectConfigs: [
-  //   { rallyApiField: "Environment", jiraCSVField: "Summary" },
-  //   { rallyApiField: "Priority", jiraCSVField: "Summary" },
-  //   { rallyApiField: "Submited By", jiraCSVField: "Summary" },
-  //   { rallyApiField: "Creation Date", jiraCSVField: "Summary" },
-  // ]
+  defectConfigs: [
+    { rallyApiField: "Environment", type: "String" },
+    { rallyApiField: "Priority", type: "String" },
+    { rallyApiField: "SubmittedBy", type: "String", locationInData:"SubmittedBy._refObjectName" },
+    { rallyApiField: "CreationDate", type: "String" },
+    {
+      rallyApiField: "IssueType",
+      staticValue: "Bug",
+      type: "String"
+    },
+  ]
 }
 
 //
