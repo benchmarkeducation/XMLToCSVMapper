@@ -1,4 +1,4 @@
-const { get, map, without, zipWith } = require('lodash');
+const { get, map, without, zipWith, isFinite } = require('lodash');
 const toCSV = require('array-to-csv');
 const fs = require('fs');
 
@@ -9,11 +9,10 @@ class ObjectParser {
       this.configurations = configurations;
       this.fieldsThatAddANewRow = configurations.fieldsThatAddANewRow;
       //this.fieldsToGrab = configurations.fieldsToGrab;
-
-      //this.fieldsThatAddANewRow = ["Tasks"];
       this._columnsToAdd = {};
       this._headers = [];
       this._rowsToAdd = [];
+      this._rowCount = 0;
   }
 
   get configurations() {
@@ -56,18 +55,32 @@ class ObjectParser {
           };
       }
 
+      // if (header === "Attachments") {
+      //   debugger;
+      // }
+
       const field = this._columnsToAdd[header];
-      const column = columnData[index];
-      const columnLength = Array.isArray(column)
-        ? column.length
+      let column = [columnData[index]];
+      const columnLength = Array.isArray(column[0])
+        ? column[0].length
         : 1;
 
+      if (isFinite(columns[index].indexToInsertAt)) {
+        const valuesInFieldAlready = field.rowData.length;
+
+        if(columns[index].indexToInsertAt > valuesInFieldAlready) {
+          column = [
+            ...Array(columns[index].indexToInsertAt - valuesInFieldAlready).fill(''),
+            ...column,
+          ];
+        }
+      }
 
       if (columnLength > field.columnCount) {
           field.columnCount = columnLength;
       }
 
-      field.rowData.push(column);
+      field.rowData.push(...column);
     });
   }
 
@@ -81,6 +94,14 @@ class ObjectParser {
 
   set rowsToBeAdded(rowConfig = {}) {
     this._rowsToAdd.push(rowConfig);
+  }
+
+  get rowCount(){
+    return this._rowCount;
+  }
+
+  set rowCount(count) {
+    this._rowCount = count;
   }
 
   createCSV(objectToBeParsed = []) {
@@ -107,9 +128,10 @@ class ObjectParser {
   }
 
   processItem(item, itemIndex) {
-    return map(item, (field, header) => {
-      return this.processField(field, header, itemIndex);
+    map(item, (field, header) => {
+      this.processField(field, header, itemIndex);
     });
+    this.rowCount += 1;
   }
 
   processField(field, header, itemIndex) {
@@ -125,9 +147,10 @@ class ObjectParser {
   }
 
   processArray(list, header, itemIndex) {
-    // TODO: pull in config here
     if (this.fieldsThatAddANewRow.includes(header) && list.length > 0) {
       this.rowsToBeAdded = { parentIndex: itemIndex, data: list };
+      // TODO: Make this be driven by configs
+      this.addExtraColumn([{header: 'IssueId', field: itemIndex, indexToInsertAt: itemIndex}]);
       return;
     }
 
@@ -144,15 +167,27 @@ class ObjectParser {
 
   updateWithExtraColumns() {
     let headerColumns = [];
-
     const filledExtraColumns = map(this.columnsToAdd, ({columnCount, rowData}, headerCol) => {
       const extraHeader = Array(columnCount).fill(headerCol);
-        headerColumns = [
-          ...headerColumns,
-          ...extraHeader,
-        ];
+      headerColumns = [
+        ...headerColumns,
+        ...extraHeader,
+      ];
 
-      return rowData.map(row => {
+      let filledRows = rowData;
+
+      // if(headerCol === 'Attachments') {
+      //   debugger;
+      // }
+
+      if (this.rowCount > rowData.length) {
+        filledRows = [
+          ...filledRows,
+          ...Array(this.rowCount - rowData.length).fill('')
+        ];
+      }
+
+      return filledRows.map(row => {
         if (Array.isArray(row)) {
           const paddedArray = Array(columnCount - row.length).fill('');
           return [...row, ...paddedArray];
@@ -208,22 +243,30 @@ class ObjectParser {
   // }
 
   addExtraRows() {
-    this.rowsToBeAdded.forEach(({data}) => {
-      data.forEach((item) => {
+    this.rowsToBeAdded.forEach(({data, parentIndex}) => {
+      data.forEach((item, index) => {
+        const indexInParsedData = this.rowCount;
         item.forEach(field => this.processField(field.value, field.key));
-        this.defaultMissingColumns(item);
+        // TODO: Make this be driven by configs
+        this.addExtraColumn([{header: 'ParentId', field: parentIndex, indexToInsertAt: indexInParsedData}]);
+        this.rowCount += 1;
+        this.defaultMissingColumns(item, ['ParentId']);
       });
     });
   }
 
-  defaultMissingColumns(data = [], defaultValue = '') {
-    const keysFilledAlready = map(data, 'key');
+  defaultMissingColumns(data = [], keysToIgnore = [], defaultValue = '', ) {
+    const keysFilledAlready = [
+      ...map(data, 'key'),
+      ...keysToIgnore
+    ];
     const allFields = Object.keys(this.columnsToAdd);
 
     const fieldsToBePadded = without(allFields, ...keysFilledAlready);
 
     fieldsToBePadded.forEach(header => {
-      this.addExtraColumn([{header, field: defaultValue}]);
+      const fillValue =  (this.columnsToAdd[header].columnCount > 1) ? [] : defaultValue;
+      this.addExtraColumn([{header, field: fillValue}]);
     });
   }
 }
