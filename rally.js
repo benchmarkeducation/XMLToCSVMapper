@@ -21,18 +21,16 @@ const attachmentsToFetch = [];
 let fetchedData = [];
 
 const typePromises = rallyConfig.types.map((type) => {
-  configsToProcess = getConfigsToProcess(type, rallyConfig);
-  const requestOptions = createTypeRequestOptions(type, configsToProcess, rallyConfig.filter);
-  return fetch(requestOptions)
-    .then((success) => new Promise(resolve => {
-      globalResolve = resolve;
-      return processDataWithConfigs(success.Results, configsToProcess);
-    }))
-    .then(value => {
-      fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2))
-      return value;
-    })
-    .catch(error => console.log(error));
+  return new Promise((resolve, reject) => {
+    globalResolve = resolve;
+    return fetchDataFromEndpoints(type)
+      .then(dataList => processDataWithConfigs(dataList, configsToProcess))
+      .then(value => {
+        fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2))
+        return value;
+      })
+      .catch(error => console.log(error));
+  });
 });
 
 
@@ -49,6 +47,30 @@ Promise.all(typePromises)
   })
   .then(fetchAttachments)
   .catch(error => console.log(error));
+
+
+function fetchDataFromEndpoints(type) {
+  const endPointData = [];
+  configsToProcess = getConfigsToProcess(type, rallyConfig);
+  const requestOptions = createRequestOptions({ type }, configsToProcess, rallyConfig.filter);
+  const dataFetchPromiseList = [];
+
+  return new Promise((resolve, reject) => {
+    return fetch(requestOptions)
+      .then(data => {
+        dataFetchPromiseList.push(Promise.resolve(data));
+        //console.log(data);
+
+        return Promise.all(dataFetchPromiseList)
+          .then((results) => {
+            results.forEach(chunk => endPointData.push(...chunk.Results));
+            resolve(endPointData);
+          });
+      })
+      .catch(e => console.log('Request fetching', e));
+  })
+  .catch(e => console.log('fetchDataFromEndpoints', e));
+}
 
 
 
@@ -106,6 +128,7 @@ function configProcessor (config, data) {
 function configProcessor (config, data) {
   let value = `Type was not supplied for confg: ${config.rallyApiField}.`;
 
+
   if (config.type) {
     switch (config.type.toLowerCase()) {
       case 'string':
@@ -142,11 +165,10 @@ function processStringType(data, config) {
 
 function processCollectionType(data, config) {
   const locationInData = config.locationInData || config.rallyApiField;
-  const refObject = get(data, locationInData);
+  const ref = get(data, locationInData);
 
-  return fetch(createRefRequestOptions(refObject))
+  return fetch(createRequestOptions({ref}))
     .then((success) => {
-
       const formattedData = {
         key: config.keyToDisplayAs || config.rallyApiField,
         value: [],
@@ -165,9 +187,9 @@ function processCollectionType(data, config) {
 
 function processMediaCollectionType(data, config) {
   const locationInData = config.locationInData || config.rallyApiField;
-  const refObject = get(data, locationInData);
+  const ref = get(data, locationInData);
 
-  return fetch(createRefRequestOptions(refObject))
+  return fetch(createRequestOptions({ ref }))
     .then((success) => {
 
       const formattedData = {
@@ -185,17 +207,16 @@ function processMediaCollectionType(data, config) {
 
       return formattedData;
     })
-    .catch(error => console.log(error));
+    .catch(error => console.log('processMediaCollectionType', error));
 }
 
 function storeMediaObjForFetchingLater(data, config) {
-  const refObject = get(data, config.mediaRefObjectLocation);
+  const ref = get(data, config.mediaRefObjectLocation);
   attachmentsToFetch.push({
     fileName: data[config.mediaUrlConfig.rallyApiField],
-    content: fetch(createRefRequestOptions(refObject)),
+    content: fetch(createRequestOptions({ ref })),
   });
 }
-
 
 // Media Processing
 
@@ -239,20 +260,16 @@ function getConfigsToProcess(type, configs) {
   return fields
 }
 
-function createTypeRequestOptions(type, fetchConfigs, filterConfig) {
-  return {
-    type,
-    fetch: generateFetchData(fetchConfigs),
-    query: generateQuery(filterConfig),
+function createRequestOptions(options, fetchConfigs, filterConfig) {
+  const req = { ...options };
+  if (fetchConfigs) {
+    req.fetch = generateFetchData(fetchConfigs);
   }
-}
 
-function createRefRequestOptions(ref, fetchConfigs, filterConfig) {
-  return {
-    ref,
-    // fetch: generateFetchData(fetchConfigs),
-    // query: generateQuery(filterConfig),
+  if (filterConfig) {
+    req.query = generateQuery(filterConfig);
   }
+  return req;
 }
 
 function generateFetchData(config) {

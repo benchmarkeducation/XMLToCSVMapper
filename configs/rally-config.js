@@ -6,16 +6,16 @@ module.exports = {
   filter: [
     {
       operator: 'where',
-      query: ["Project.Name", "=", "Core Team"]
+      query: ["Iteration", "!=", null]
     },
-    {
-      operator: 'or',
-      query: ["Project.Name", "=", "Digital Instruction Software Team"],
-    },
-    {
-      operator: 'and',
-      query: ["Iteration", "=", null]
-    },
+    // {
+    //   operator: 'or',
+    //   query: ["Project.Name", "=", "Digital Instruction Software Team"],
+    // },
+    // {
+    //   operator: 'and',
+    //   query: ["Iteration", "=", null]
+    // },
   ],
   globalConfigs: [
     { rallyApiField: "Name", type:"String" },
