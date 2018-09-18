@@ -1,7 +1,7 @@
 module.exports = {
   types: [
-    //"hierarchicalrequirement",
-    "defect"
+    "hierarchicalrequirement",
+    // "defect"
   ],
   filter: [
     {
@@ -19,56 +19,52 @@ module.exports = {
   ],
   globalConfigs: [
     { rallyApiField: "Name", type:"String" },
-    {
-      rallyApiField: "IssueType",
-      staticValue: "Task",
-      type: "String"
-    },
+    { rallyApiField: "Iteration", type: "String", locationInData: "Iteration.Name"},
+    // {
+    //   rallyApiField: "IssueType",
+    //   staticValue: "Task",
+    //   type: "String"
+    // },
     {
       rallyApiField: "Description",
       type: 'String',
-      convert: 'jiraWiki',
+      convert: 'markdown',
     },
-    {
-      rallyApiField: "Attachments",
-      type: 'MediaCollection',
-      needsFetching: true,
-      mediaRefObjectLocation: 'Content',
-      mediaUrlConfig: {
-        rallyApiField: "Name",
-        type:"String",
-        prefix: "https://lms2-kvalentine.benchmarkuniverse.com/media/",
-      }
-    },
-    {
-      rallyApiField: "Tasks",
-      type: 'Collection',
-      collectionFieldConfigs: [
-        { rallyApiField: "Name", type:"String" },
-        { rallyApiField: "State", type:"String", keyToDisplayAs: "ScheduleState" },
-        {
-          rallyApiField: "IssueType",
-          staticValue: "Sub-task",
-          type: "String"
-        },
-      ]
-    },
+    // {
+    //   rallyApiField: "Attachments",
+    //   type: 'MediaCollection',
+    //   mediaRefObjectLocation: 'Content',
+    //   mediaUrlConfig: {
+    //     rallyApiField: "Name",
+    //     type:"String",
+    //     prefix: "https://lms2-kvalentine.benchmarkuniverse.com/media/",
+    //   }
+    // },
+    // {
+    //   rallyApiField: "Tasks",
+    //   type: 'Collection',
+    //   collectionFieldConfigs: [
+    //     { rallyApiField: "Name", type:"String" },
+    //     { rallyApiField: "State", type:"String", keyToDisplayAs: "ScheduleState" },
+    //     {
+    //       rallyApiField: "IssueType",
+    //       staticValue: "Sub-task",
+    //       type: "String"
+    //     },
+    //   ]
+    // },
     { rallyApiField: "Notes", type:"String"},
     { rallyApiField: "PlanEstimate", type: "String" },
     { rallyApiField: "Project", type: "String", locationInData: "Project.Name"},
     { rallyApiField: "c_POStatus", type: "String"},
     { rallyApiField: "ScheduleState", type: "String"},
+    { rallyApiField: "Release", type: "String", locationInData: 'Release._refObjectName'},
   ],
   defectConfigs: [
     { rallyApiField: "Environment", type: "String" },
     { rallyApiField: "Priority", type: "String" },
     { rallyApiField: "SubmittedBy", type: "String", locationInData:"SubmittedBy._refObjectName" },
     { rallyApiField: "CreationDate", type: "String" },
-    {
-      rallyApiField: "IssueType",
-      staticValue: "Bug",
-      type: "String"
-    },
   ]
 }
 

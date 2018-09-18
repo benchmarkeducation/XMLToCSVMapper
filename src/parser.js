@@ -8,7 +8,6 @@ class ObjectParser {
   constructor(configurations = {}) {
       this.configurations = configurations;
       this.fieldsThatAddANewRow = configurations.fieldsThatAddANewRow;
-      //this.fieldsToGrab = configurations.fieldsToGrab;
       this._columnsToAdd = {};
       this._headers = [];
       this._rowsToAdd = [];
@@ -54,10 +53,6 @@ class ObjectParser {
               rowData: [],
           };
       }
-
-      // if (header === "Attachments") {
-      //   debugger;
-      // }
 
       const field = this._columnsToAdd[header];
       let column = [columnData[index]];
@@ -176,10 +171,6 @@ class ObjectParser {
 
       let filledRows = rowData;
 
-      // if(headerCol === 'Attachments') {
-      //   debugger;
-      // }
-
       if (this.rowCount > rowData.length) {
         filledRows = [
           ...filledRows,
@@ -216,31 +207,6 @@ class ObjectParser {
   addHeaders(fieldList = []) {
     this.headers.push(...fieldList);
   }
-
-  // proceesHeaders() {
-  //   const headersList = this.fieldsToGrab.map((field) => {
-  //     return (!this.isADynamicHeaderConfiguration(field))
-  //       ? field.mapFieldTo
-  //       : undefined;
-  //   }).filter(value => value !== undefined);
-  //
-  //   this.addHeaders(headersList);
-  // }
-
-  // isADynamicHeaderConfiguration(field) {
-  //   let fieldToCheck = field;
-  //   let value = false;
-  //
-  //   if(fieldToCheck.isArray) {
-  //     fieldToCheck = fieldToCheck.isArray;
-  //   }
-  //
-  //   if(fieldToCheck.addColumn) {
-  //     value = true;
-  //   }
-  //
-  //   return value;
-  // }
 
   addExtraRows() {
     this.rowsToBeAdded.forEach(({data, parentIndex}) => {

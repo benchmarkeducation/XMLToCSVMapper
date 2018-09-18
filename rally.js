@@ -15,20 +15,19 @@ const rallyApi = rally({
 });
 
 let configsToProcess;
-let globalResolve;
 const attachmentsToFetch = [];
 
 let fetchedData = [];
 
 const typePromises = rallyConfig.types.map((type) => {
   return new Promise((resolve, reject) => {
-    globalResolve = resolve;
     return fetchDataFromEndpoints(type)
       .then(dataList => processDataWithConfigs(dataList, configsToProcess))
       .then(value => {
         fsPromises.writeFile(`./data/${type}.json`,JSON.stringify(value, null, 2))
         return value;
       })
+      .then(value => resolve(value))
       .catch(error => console.log(error));
   });
 });
@@ -52,14 +51,26 @@ Promise.all(typePromises)
 function fetchDataFromEndpoints(type) {
   const endPointData = [];
   configsToProcess = getConfigsToProcess(type, rallyConfig);
-  const requestOptions = createRequestOptions({ type }, configsToProcess, rallyConfig.filter);
+  const requestStaticOptions = { type };
+  const requestOptions = createRequestOptions(requestStaticOptions, configsToProcess, rallyConfig.filter);
   const dataFetchPromiseList = [];
 
   return new Promise((resolve, reject) => {
     return fetch(requestOptions)
       .then(data => {
         dataFetchPromiseList.push(Promise.resolve(data));
-        //console.log(data);
+        const chunkedList = chunkRange(data.TotalResultCount);
+        chunkedList.shift();
+
+        chunkedList.forEach(({ min }) => dataFetchPromiseList.push(
+          fetch(createRequestOptions({
+              ...requestStaticOptions,
+              start: min,
+            },
+            configsToProcess,
+            rallyConfig.filter
+          ))
+        ));
 
         return Promise.all(dataFetchPromiseList)
           .then((results) => {
@@ -72,23 +83,35 @@ function fetchDataFromEndpoints(type) {
   .catch(e => console.log('fetchDataFromEndpoints', e));
 }
 
+function chunkRange(max, chunkSize = 200, min = 1) {
+  const numberOfChunks = max / chunkSize;
+  const fullChunks = Math.floor(numberOfChunks);
+  const chunkList = [];
+  let chunk = 0;
 
+  while (chunk < fullChunks) {
+    const min = (chunkSize * chunk) + 1;
+    chunk += 1;
+    const max =  chunkSize * chunk;
+    chunkList.push({min, max});
+  }
+
+  if (chunk !== numberOfChunks) {
+    const min = (chunkSize * chunk) + 1;
+    chunkList.push({min, max});
+  }
+
+  return chunkList;
+}
 
 function processDataWithConfigs(dataArray, configs) {
-  const promiseMap = dataArray.map(data => Promise.resolve(data));
-  return Promise.all(promiseMap)
-    .then((results) => {
-      return Promise.all(results.map((data) => processConfigs(data, configs)))
-    })
-    .then(results => globalResolve(results));
+  return new Promise(resolve => {
+    resolve(Promise.all(dataArray.map((data) => processConfigs(data, configs))));
+  });
 }
 
 function processConfigs(data, configs) {
-  const promiseMap = configs.map(config => {
-    const value = configProcessor(config, data);
-
-    return Promise.resolve(value);
-  });
+  const promiseMap = configs.map(config => Promise.resolve(configProcessor(config, data)));
 
   return Promise.all(promiseMap)
     .then(success => {
@@ -101,33 +124,10 @@ function processConfigs(data, configs) {
     .catch(error => console.log(error));
 }
 
-function configProcessor (config, data) {
-  let value = `Type was not supplied for confg: ${config.rallyApiField}.`;
-
-  if (config.type) {
-    switch (config.type.toLowerCase()) {
-      case 'string':
-        return processStringType(data, config);
-        break;
-      case 'collection':
-        return processCollectionType(data, config);
-      case 'mediacollection':
-        return processMediaCollectionType(data, config);
-        return
-      default:
-        value = `Unknown Type of ${config.type} supplied`;
-    };
-  }
-
-  return value;
-}
-
 
 // Config Proceessing
-
 function configProcessor (config, data) {
   let value = `Type was not supplied for confg: ${config.rallyApiField}.`;
-
 
   if (config.type) {
     switch (config.type.toLowerCase()) {
@@ -192,6 +192,10 @@ function processMediaCollectionType(data, config) {
   return fetch(createRequestOptions({ ref }))
     .then((success) => {
 
+      if(error.tryAgain) {
+        console.log('Got here', success);
+      }
+
       const formattedData = {
         key: config.rallyApiField,
         value: [],
@@ -207,7 +211,12 @@ function processMediaCollectionType(data, config) {
 
       return formattedData;
     })
-    .catch(error => console.log('processMediaCollectionType', error));
+    .catch(error => {
+      return {
+        key: config.rallyApiField,
+        value: [],
+      };
+    });
 }
 
 function storeMediaObjForFetchingLater(data, config) {
@@ -292,5 +301,6 @@ function generateQuery(filters) {
 }
 
 function fetch(options) {
-  return rallyApi.query(options);
+  return rallyApi.query(options)
+    // .catch((error, b, c) => {tryAgain: options});
 }
